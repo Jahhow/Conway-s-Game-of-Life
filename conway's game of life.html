@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style type="text/css">
+        html,
+        body {
+            background-color: #000;
+            height: 100%;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="myCanvas">
+        Your browser does not support the HTML5 canvas tag.</canvas>
+
+    <script>
+        var cellSize = 5
+        var c = document.getElementById("myCanvas");
+        c.width = window.innerWidth;
+        c.height = window.innerHeight;
+        c.addEventListener("click", function (event) {
+            let x = Math.floor(event.offsetX / cellSize)
+            let y = Math.floor(event.offsetY / cellSize)
+            curStates[x][y] ^= 1
+            fillCell(x, y, curStates[x][y])
+        }, false);
+        var ctx = c.getContext("2d");
+        function rand01() {
+            return Math.random() > .5 ? 1 : 0;
+        }
+        var arraySizeX = Math.floor(c.width / cellSize)
+        var arraySizeY = Math.floor(c.height / cellSize)
+        window.addEventListener('resize', () => {
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+            arraySizeX = Math.floor(c.width / cellSize)
+            arraySizeY = Math.floor(c.height / cellSize)
+        });
+        function fillCell(x, y, fillStyle) {// unit: index
+            ctx.beginPath();
+            ctx.rect(x * cellSize, y * cellSize, cellSize, cellSize);
+            if (fillStyle)
+                ctx.fillStyle = 'rgb('
+                    + Math.floor((255) * Math.min(x / (arraySizeX - 1), y / (arraySizeY - 1))) + ','
+                    + Math.floor(200 - 200 * (x / (arraySizeX - 1))) + ','
+                    + Math.floor(220 - 220 * (y / (arraySizeY - 1))) + ')';
+            else ctx.fillStyle = '#0000'
+            ctx.fill();
+        }
+        var curStates = [];
+        var nextStates = [];
+        setInterval(function () {
+            ctx.clearRect(0, 0, c.width, c.height)
+            for (let iX = 0; iX < arraySizeX; ++iX) {
+                for (let iY = 0; iY < arraySizeY; ++iY) {
+                    let count = 0
+                    for (let iX1 = iX - 1; iX1 <= iX + 1; ++iX1) {
+                        for (let iY1 = iY - 1; iY1 <= iY + 1; ++iY1) {
+                            if (iX1 == iX && iY1 == iY)
+                                continue
+                            let iX2 = (iX1 + arraySizeX) % arraySizeX
+                            let iY2 = (iY1 + arraySizeY) % arraySizeY
+                            if (curStates[iX2] === undefined)
+                                curStates[iX2] = new Array(arraySizeY)
+                            if (curStates[iX2][iY2] === undefined)
+                                curStates[iX2][iY2] = rand01()
+                            if (curStates[iX2][iY2])
+                                ++count
+                        }
+                    }
+                    let newState = 0
+                    if (curStates[iX][iY] === undefined)
+                        curStates[iX][iY] = rand01()
+                    if (curStates[iX][iY]) {
+                        if (count >= 2) {
+                            if (count <= 3) {
+                                newState = 1
+                            }
+                        }
+                    } else {
+                        if (count == 3) {
+                            newState = 1
+                        }
+                    }
+                    fillCell(iX, iY, newState)
+                    if (nextStates[iX] === undefined)
+                        nextStates[iX] = new Array(arraySizeY)
+                    nextStates[iX][iY] = newState
+                }
+            }
+            var temp = nextStates
+            nextStates = curStates
+            curStates = temp
+        }, 100);
+    </script>
+
+</body>
+
+</html>
