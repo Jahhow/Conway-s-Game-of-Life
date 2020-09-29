@@ -18,60 +18,95 @@
         Your browser does not support the HTML5 canvas tag.</canvas>
 
     <script>
-        var cellSize = 5
+        // return 0 or 1 randomly
+        function rand01() {
+            return Math.random() > .5 ? 1 : 0;
+        }
+
+        var cellSize = 5 // visual size of each cell
         var c = document.getElementById("myCanvas");
+        var ctx = c.getContext("2d");
+
+        // set the canvas to match browser window
         c.width = window.innerWidth;
         c.height = window.innerHeight;
+
+        // on canvas click, flip the state of the clicked cell
         c.addEventListener("click", function (event) {
             let x = Math.floor(event.offsetX / cellSize)
             let y = Math.floor(event.offsetY / cellSize)
             curStates[x][y] ^= 1
             fillCell(x, y, curStates[x][y])
         }, false);
-        var ctx = c.getContext("2d");
-        function rand01() {
-            return Math.random() > .5 ? 1 : 0;
-        }
+
+        // the number of cells along screen X, Y
         var arraySizeX = Math.floor(c.width / cellSize)
         var arraySizeY = Math.floor(c.height / cellSize)
+
+        // on window size change, update the cell number
         window.addEventListener('resize', () => {
             c.width = window.innerWidth;
             c.height = window.innerHeight;
             arraySizeX = Math.floor(c.width / cellSize)
             arraySizeY = Math.floor(c.height / cellSize)
         });
-        function fillCell(x, y, fillStyle) {// unit: index
+
+        function fillCell(
+            x, y, // index of the cell to fill
+            fillStyle // 1: default color, 0: clear
+        ) {
             ctx.beginPath();
             ctx.rect(x * cellSize, y * cellSize, cellSize, cellSize);
             if (fillStyle)
                 ctx.fillStyle = 'rgb('
+                    // calculating the color to fill
                     + Math.floor((255) * Math.min(x / (arraySizeX - 1), y / (arraySizeY - 1))) + ','
                     + Math.floor(200 - 200 * (x / (arraySizeX - 1))) + ','
                     + Math.floor(220 - 220 * (y / (arraySizeY - 1))) + ')';
             else ctx.fillStyle = '#0000'
             ctx.fill();
         }
-        var curStates = [];
+
+        var curStates = []; // current cell states
         var nextStates = [];
+
+        // time interval scheduled infinite loop
         setInterval(function () {
+            // clear the canvas
             ctx.clearRect(0, 0, c.width, c.height)
+
+            // for each cell,
             for (let iX = 0; iX < arraySizeX; ++iX) {
                 for (let iY = 0; iY < arraySizeY; ++iY) {
+
+                    // count the number of alive cells among the eight neighbor cells
                     let count = 0
+
+                    // foreach neighbors
                     for (let iX1 = iX - 1; iX1 <= iX + 1; ++iX1) {
                         for (let iY1 = iY - 1; iY1 <= iY + 1; ++iY1) {
                             if (iX1 == iX && iY1 == iY)
                                 continue
+
+                            // the right most cell and the left most cell are neighbors
+                            // the top most cell and the bottom most cell are neighbors
                             let iX2 = (iX1 + arraySizeX) % arraySizeX
                             let iY2 = (iY1 + arraySizeY) % arraySizeY
+
+                            // properly resize the cell state array according to the window dimension
                             if (curStates[iX2] === undefined)
                                 curStates[iX2] = new Array(arraySizeY)
                             if (curStates[iX2][iY2] === undefined)
+                                // initial the new cell's state randomly
                                 curStates[iX2][iY2] = rand01()
+
+                            // count alive cells
                             if (curStates[iX2][iY2])
                                 ++count
                         }
                     }
+                    // done counting.
+                    // calculate the new state of the cell
                     let newState = 0
                     if (curStates[iX][iY] === undefined)
                         curStates[iX][iY] = rand01()
@@ -86,12 +121,17 @@
                             newState = 1
                         }
                     }
+
+                    // draw the new state
                     fillCell(iX, iY, newState)
+
+                    // store the new state into 'nextStates[]'
                     if (nextStates[iX] === undefined)
                         nextStates[iX] = new Array(arraySizeY)
                     nextStates[iX][iY] = newState
                 }
             }
+            // next state becomes the new current state.
             var temp = nextStates
             nextStates = curStates
             curStates = temp
